@@ -1,7 +1,5 @@
-use std::collections::HashMap;
-
 use serde::Deserialize;
-use serde_json::Value;
+use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -49,10 +47,14 @@ pub struct Tweet {
 
 #[derive(Debug, Deserialize)]
 pub struct Entities {
-    pub hashtags: Option<Vec<Value>>,
-    pub symbols: Option<Vec<Value>>,
-    pub user_mentions: Option<Vec<Value>>,
-    pub urls: Option<Vec<Url>>,
+    #[serde(default)]
+    pub hashtags: Vec<Text>,
+    #[serde(default)]
+    pub symbols: Vec<Text>,
+    #[serde(default)]
+    pub user_mentions: Vec<UserMention>,
+    #[serde(default)]
+    pub urls: Vec<Url>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -60,7 +62,28 @@ pub struct Url {
     pub url: String,
     pub expanded_url: String,
     pub display_url: String,
-    pub indices: Vec<i64>,
+    pub indices: Indices,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UserMention {
+    pub id: i64,
+    pub id_str: String,
+    pub indices: Indices,
+    pub name: String,
+    pub screen_name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Text {
+    pub indices: Indices,
+    pub text: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Indices {
+    pub start: i32,
+    pub end: i32,
 }
 
 #[derive(Debug, Deserialize)]

@@ -13,6 +13,7 @@ use reqwest::{
 
 const BEARER_TOKEN: &str = "Bearer AAAAAAAAAAAAAAAAAAAAAPYXBAAAAAAACLXUNDekMxqa8h%2F40K4moUkGsoc%3DTYfbDKbT3jJPCEVnMYqilB28NHfOPqkca3qaAxGfsyKCs0wRbw";
 
+#[derive(Clone)]
 pub struct TwitterScraper {
     client: Client,
     guest_token: Option<GuestToken>,

@@ -94,7 +94,7 @@ impl TryFrom<TwitterUser> for User {
             pinned_tweet_ids: user.pinned_tweet_ids_str,
             tweet_count: user.statuses_count,
             url: format!("https://twitter.com/{}", user.screen_name),
-            user_id: value.id,
+            user_id: value.rest_id,
             username: user.screen_name,
             friends_count: user.friends_count,
             joined: created_at,
