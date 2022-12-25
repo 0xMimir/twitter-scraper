@@ -1,6 +1,9 @@
-mod error;
-pub use crate::error::{Error, CResult as Result}; 
+pub mod error;
+pub use error::{Result, Error};
 
-pub mod store;
+pub mod types;
+
 pub mod scraper;
 pub use scraper::TwitterScraper;
+
+pub mod profile;
