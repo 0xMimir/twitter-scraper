@@ -1,7 +1,15 @@
 use std::cell::RefCell;
 
 use super::types::guest_token::GuestToken;
-use crate::{error::ResponseError, Result};
+use crate::{
+    error::ResponseError,
+    profile::Profile,
+    types::{
+        adaptive::AdaptiveParams, profile::TwitterUserResponse, timeline::TwitterTimelineResponse,
+        tweet::Tweet,
+    },
+    Result,
+};
 use reqwest::{
     header::{HeaderMap, HeaderValue},
     Client, ClientBuilder, Method,
@@ -16,17 +24,6 @@ pub struct TwitterScraper {
 }
 
 impl TwitterScraper {
-    pub async fn get_guest_token(&self) -> Result<()> {
-        let guest_token = self
-            .make_request(
-                "https://api.twitter.com/1.1/guest/activate.json",
-                Method::POST,
-            )
-            .await?;
-
-        self.guest_token.replace(Some(guest_token).into());
-        Ok(())
-    }
     pub fn new() -> Self {
         let client = Self::get_reqwest_client();
 
@@ -35,7 +32,20 @@ impl TwitterScraper {
             guest_token: None.into(),
         }
     }
-    pub fn get_reqwest_client() -> Client {
+
+    pub async fn get_guest_token(&self) -> Result<()> {
+        let guest_token = self
+            .make_request(
+                "https://api.twitter.com/1.1/guest/activate.json",
+                Method::POST,
+            )
+            .await?;
+
+        self.guest_token.replace(Some(guest_token));
+        Ok(())
+    }
+
+    fn get_reqwest_client() -> Client {
         let mut headers = HeaderMap::new();
         headers.append("Authorization", HeaderValue::from_static(BEARER_TOKEN));
 
@@ -44,7 +54,7 @@ impl TwitterScraper {
             .build()
             .unwrap()
     }
-    pub async fn make_request<S, T>(&self, url: S, method: Method) -> Result<T>
+    async fn make_request<S, T>(&self, url: S, method: Method) -> Result<T>
     where
         S: reqwest::IntoUrl,
         T: DeserializeOwned + 'static,
@@ -63,8 +73,6 @@ impl TwitterScraper {
         .text()
         .await?;
 
-        println!("{}", response);
-
         match serde_json::from_str(&response) {
             Ok(t) => Ok(t),
             Err(_) => {
@@ -73,45 +81,48 @@ impl TwitterScraper {
             }
         }
     }
-    // async fn get_timeline_response<S>(&self, url: S) -> Result<TwitterTimelineResponse>
-    // where
-    //     S: reqwest::IntoUrl,
-    // {
-    //     let response = self.make_request(url, Method::GET).await?;
-    //     serde_json::from_str(response.as_str()).map_err(Error::from)
-    // }
+    async fn get_timeline_response<S>(&self, url: S) -> Result<TwitterTimelineResponse>
+    where
+        S: reqwest::IntoUrl,
+    {
+        self.make_request(url, Method::GET).await
+    }
 
-    // pub async fn get_users_tweets(
-    //     &self,
-    //     username: &str,
-    //     cursor: Option<String>,
-    // ) -> Result<(Vec<Tweet>, Option<String>)> {
-    //     let user_id = self.get_user(username).await?.user_id;
-    //     let mut url = format!(
-    //         "https://api.twitter.com/2/timeline/profile/{}.json?count=100",
-    //         user_id
-    //     );
+    pub async fn get_users_tweets(
+        &self,
+        username: &str,
+        _cursor: Option<String>,
+    ) -> Result<(Vec<Tweet>, Option<String>)> {
+        let user_id = self.get_profile(username).await?.user_id;
+        let url = format!(
+            "https://api.twitter.com/2/timeline/profile/{}.json",
+            user_id
+        );
+        self.get_timeline_response(url)
+            .await
+            .map(|x| x.parse_tweets())
+    }
 
-    //     if let Some(cursor) = cursor {
-    //         url = format!("{}&cursor={}", url, urlencoding::encode(cursor.as_str()))
-    //     }
+    pub async fn search(
+        &self,
+        query: &str,
+        cursor: Option<String>,
+    ) -> Result<(Vec<Tweet>, Option<String>)> {
+        let params = AdaptiveParams::search_params(query, cursor);
+        let url = format!(
+            "https://twitter.com/i/api/2/search/adaptive.json?{}",
+            serde_url_params::to_string(&params)?
+        );
+        self.get_timeline_response(url)
+            .await
+            .map(|x| x.parse_tweets())
+    }
 
-    //     let response = self.get_timeline_response(url).await?;
-    //     Ok(response.parse_tweets(Some(user_id)))
-    // }
-    // pub async fn search_tweets(
-    //     &self,
-    //     query: &str,
-    //     cursor: Option<String>,
-    // ) -> Result<(Vec<Tweet>, Option<String>)> {
-    //     let mut url = format!("https://twitter.com/i/api/2/search/adaptive.json?q={}&count=100&query_source=typed_query&pc=1&spelling_corrections=1", query);
-    //     if let Some(cursor) = cursor {
-    //         url = format!("{}&cursor={}", url, urlencoding::encode(cursor.as_str()));
-    //     }
-
-    //     let response = self.get_timeline_response(url).await?;
-    //     Ok(response.parse_tweets(None))
-    // }
+    pub async fn get_profile(&self, username: &str) -> Result<Profile> {
+        let url = format!("https://api.twitter.com/graphql/4S2ihIKfF3xhp-ENxvUAfQ/UserByScreenName?variables=%7B%22screen_name%22%3A%22{}%22%2C%22withHighlightedLabel%22%3Atrue%7D", username);
+        let response: TwitterUserResponse = self.make_request(url, Method::GET).await?;
+        response.try_into()
+    }
 }
 
 impl Default for TwitterScraper {

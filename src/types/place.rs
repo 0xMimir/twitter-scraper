@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Place {
     pub id: String,
     pub place_type: String,

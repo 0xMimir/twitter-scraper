@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Video{
     pub id: String,
     pub preview: String,

@@ -1,6 +1,5 @@
-use crate::{types::profile::TwitterUserResponse, Error, Result, TwitterScraper};
+use crate::{types::profile::TwitterUserResponse, Error, Result};
 use chrono::NaiveDateTime;
-use reqwest::Method;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Profile {
@@ -56,16 +55,9 @@ impl TryFrom<TwitterUserResponse> for Profile {
     }
 }
 
-impl TwitterScraper {
-    pub async fn get_profile(&self, username: &str) -> Result<Profile> {
-        let url = format!("https://api.twitter.com/graphql/4S2ihIKfF3xhp-ENxvUAfQ/UserByScreenName?variables=%7B%22screen_name%22%3A%22{}%22%2C%22withHighlightedLabel%22%3Atrue%7D", username);
-        let response: TwitterUserResponse = self.make_request(url, Method::GET).await?;
-        response.try_into()
-    }
-}
-
 #[tokio::test]
 async fn test_profile_not_found() {
+    use crate::TwitterScraper;
     let scraper = TwitterScraper::new();
     scraper.get_guest_token().await.unwrap();
     let profile = scraper.get_profile("ADLP40329lfdslfkdDJKSAHDkJ").await;
@@ -73,6 +65,7 @@ async fn test_profile_not_found() {
 }
 #[tokio::test]
 async fn test_profile_error_suspended() {
+    use crate::TwitterScraper;
     let scraper = TwitterScraper::new();
     scraper.get_guest_token().await.unwrap();
     let profile = scraper.get_profile("123").await;
@@ -80,6 +73,7 @@ async fn test_profile_error_suspended() {
 }
 #[tokio::test]
 async fn test_profile_valid() {
+    use crate::TwitterScraper;
     let scraper = TwitterScraper::new();
     scraper.get_guest_token().await.unwrap();
     let profile = scraper.get_profile("elonmusk").await;

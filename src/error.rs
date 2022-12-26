@@ -33,6 +33,12 @@ impl From<ParseError> for Error {
     }
 }
 
+impl From<serde_url_params::Error> for Error{
+    fn from(value: serde_url_params::Error) -> Self {
+        Self::SerdeError(value.to_string())
+    }
+}
+
 #[derive(Deserialize)]
 pub struct ResponseError {
     pub errors: Vec<Message>,
