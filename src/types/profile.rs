@@ -14,8 +14,7 @@ pub struct TwitterUserData {
 pub struct TwitterUser {
     pub id: String,
     pub rest_id: String,
-    pub legacy: LegacyProfile,
-    pub is_profile_translatable: bool,
+    pub legacy: LegacyProfile
 }
 
 #[derive(Deserialize, Debug)]

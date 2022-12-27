@@ -10,6 +10,7 @@ pub enum Error {
     ParseError(ParseError),
     UserSuspended,
     UserNotFound,
+    Unauthorized,
 
     #[non_exhaustive]
     UnknownError,
@@ -53,9 +54,13 @@ impl From<ResponseError> for Error {
     fn from(value: ResponseError) -> Self {
         match value.errors.first() {
             Some(msg) => match msg.code {
-                63 => Self::UserSuspended,
+                37 => Self::Unauthorized,
                 50 => Self::UserNotFound,
-                _ => Self::UnknownError,
+                63 => Self::UserSuspended,
+                _ => {
+                    println!("{}", msg.code);
+                    Self::UnknownError
+                },
             },
             None => Self::UnknownError,
         }

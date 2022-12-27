@@ -1,12 +1,12 @@
 use std::cell::RefCell;
 
-use super::types::guest_token::GuestToken;
+use super::types::auth::GuestToken;
 use crate::{
     error::ResponseError,
     profile::Profile,
     types::{
-        adaptive::AdaptiveParams, profile::TwitterUserResponse, timeline::TwitterTimelineResponse,
-        tweet::Tweet,
+        adaptive::AdaptiveParams, auth::CSRFAuth, graph::GraphResponse, params::Params,
+        profile::TwitterUserResponse, timeline::TwitterTimelineResponse, tweet::Tweet,
     },
     Result,
 };
@@ -21,6 +21,7 @@ const BEARER_TOKEN: &str = "Bearer AAAAAAAAAAAAAAAAAAAAAPYXBAAAAAAACLXUNDekMxqa8
 pub struct TwitterScraper {
     client: Client,
     guest_token: RefCell<Option<GuestToken>>,
+    csrf_auth: Option<CSRFAuth>,
 }
 
 impl TwitterScraper {
@@ -30,7 +31,16 @@ impl TwitterScraper {
         Self {
             client,
             guest_token: None.into(),
+            csrf_auth: None,
         }
+    }
+
+    pub fn add_csrf_auth<T: Into<String>>(mut self, auth_token: T, csrf_token: T) -> Self {
+        self.csrf_auth = Some(CSRFAuth {
+            auth_token: auth_token.into(),
+            csrf_token: csrf_token.into(),
+        });
+        self
     }
 
     pub async fn get_guest_token(&self) -> Result<()> {
@@ -61,22 +71,39 @@ impl TwitterScraper {
     {
         let req = self.client.request(method, url);
 
-        let response = match &self.guest_token.take() {
+        let req = match &self.guest_token.take() {
             Some(token) => req.header(
                 "X-Guest-Token",
                 HeaderValue::from_str(token.guest_token.as_str()).unwrap(),
             ),
             None => req,
-        }
-        .send()
-        .await?
-        .text()
-        .await?;
+        };
+
+        let req = match &self.csrf_auth {
+            Some(token) => req
+                .header(
+                    "cookie",
+                    HeaderValue::from_str(
+                        format!("auth_token={};ct0={}", token.auth_token, token.csrf_token)
+                            .as_str(),
+                    )
+                    .unwrap(),
+                )
+                .header(
+                    "x-csrf-token",
+                    HeaderValue::from_str(token.csrf_token.as_str()).unwrap(),
+                ),
+            None => req,
+        };
+
+        let response = req.send().await?.text().await?;
+        // println!("{}", response);
 
         match serde_json::from_str(&response) {
             Ok(t) => Ok(t),
-            Err(_) => {
-                let response_error: ResponseError = serde_json::from_str(&response)?;
+            Err(error) => {
+                let response_error: ResponseError =
+                    serde_json::from_str(&response).map_err(|_| error)?;
                 Err(response_error.into())
             }
         }
@@ -121,7 +148,42 @@ impl TwitterScraper {
     pub async fn get_profile(&self, username: &str) -> Result<Profile> {
         let url = format!("https://api.twitter.com/graphql/4S2ihIKfF3xhp-ENxvUAfQ/UserByScreenName?variables=%7B%22screen_name%22%3A%22{}%22%2C%22withHighlightedLabel%22%3Atrue%7D", username);
         let response: TwitterUserResponse = self.make_request(url, Method::GET).await?;
-        response.try_into()
+        response.data.user.try_into()
+    }
+
+    pub async fn get_followers(
+        &self,
+        username: &str,
+        cursor: Option<String>,
+    ) -> Result<(Vec<Profile>, Option<String>)> {
+        self.get_follower_following(username, false, cursor).await
+    }
+
+    pub async fn get_following(
+        &self,
+        username: &str,
+        cursor: Option<String>,
+    ) -> Result<(Vec<Profile>, Option<String>)> {
+        self.get_follower_following(username, true, cursor).await
+    }
+
+    async fn get_follower_following(
+        &self,
+        username: &str,
+        following: bool,
+        cursor: Option<String>,
+    ) -> Result<(Vec<Profile>, Option<String>)> {
+        let user_id = self.get_profile(username).await?.user_id;
+        let params = Params::new(user_id, cursor).to_url()?;
+        let url = match following {
+            true => "https://api.twitter.com/graphql/cocC_CzoxzpwgXr3jhG7DA/Following",
+            false => "https://api.twitter.com/graphql/KwJEsSEIHz991Ansf4Y1tQ/Followers",
+        };
+        let url = format!("{}?{}", url, params);
+
+        self.make_request::<_, GraphResponse>(url, Method::GET)
+            .await
+            .map(|r| r.get_users())
     }
 }
 

@@ -219,13 +219,11 @@ impl TwitterTimelineResponse {
             .screen_name
             .as_str();
 
-        let time_parsed = match NaiveDateTime::parse_from_str(
-            &raw_tweet_info.created_at,
-            "%a %b %d %T %z %Y",
-        ) {
-            Ok(t) => Some(t),
-            Err(_) => None,
-        }?;
+        let time_parsed =
+            match NaiveDateTime::parse_from_str(&raw_tweet_info.created_at, "%a %b %d %T %z %Y") {
+                Ok(t) => Some(t),
+                Err(_) => None,
+            }?;
 
         let urls = raw_tweet_info
             .entities
@@ -241,8 +239,14 @@ impl TwitterTimelineResponse {
             .map(|h| h.text.to_owned())
             .collect();
 
+        let symbols = raw_tweet_info
+            .entities
+            .symbols
+            .iter()
+            .map(|s| s.text.to_owned())
+            .collect();
+
         Some(Tweet {
-            hashtags,
             id: raw_tweet_info.id_str.clone(),
             in_reply_to_status: raw_tweet_info.in_reply_to_status_id_str.clone(),
             is_quoted: raw_tweet_info.is_quote_status,
@@ -256,11 +260,14 @@ impl TwitterTimelineResponse {
             retweets: raw_tweet_info.retweet_count,
             text: raw_tweet_info.text.to_owned(),
             timestamp: time_parsed.timestamp(),
-            time_parsed,
-            urls,
             user_id: raw_tweet_info.user_id_str.to_owned(),
             username: username.to_owned(),
             sensitive_content: raw_tweet_info.possibly_sensitive.unwrap_or(false),
+            source: raw_tweet_info.source.to_owned(),
+            time_parsed,
+            hashtags,
+            symbols,
+            urls,
         })
     }
 }

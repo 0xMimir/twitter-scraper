@@ -1,4 +1,4 @@
-use crate::{types::profile::TwitterUserResponse, Error, Result};
+use crate::{types::profile::TwitterUser, Error, Result};
 use chrono::NaiveDateTime;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -24,11 +24,11 @@ pub struct Profile {
     pub website: Option<String>,
 }
 
-impl TryFrom<TwitterUserResponse> for Profile {
+impl TryFrom<TwitterUser> for Profile {
     type Error = Error;
 
-    fn try_from(value: TwitterUserResponse) -> Result<Self> {
-        let legacy = value.data.user.legacy;
+    fn try_from(value: TwitterUser) -> Result<Self> {
+        let legacy = value.legacy;
         let joined = NaiveDateTime::parse_from_str(&legacy.created_at, "%a %b %d %T %z %Y")?;
 
         Ok(Self {
@@ -48,7 +48,7 @@ impl TryFrom<TwitterUserResponse> for Profile {
             pinned_tweet_ids: legacy.pinned_tweet_ids_str,
             tweets_count: legacy.statuses_count,
             url: format!("https://twitter.com/{}", legacy.screen_name),
-            user_id: value.data.user.rest_id,
+            user_id: value.rest_id,
             username: legacy.screen_name,
             website: None,
         })

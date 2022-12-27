@@ -13,6 +13,8 @@ pub struct Tweet {
     pub retweets: i64,
     pub text: String,
     pub time_parsed: NaiveDateTime,
+    pub symbols: Vec<String>,
+    pub source: String,
     pub timestamp: i64,
     pub urls: Vec<String>,
     pub user_id: String,

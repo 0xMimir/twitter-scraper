@@ -4,3 +4,8 @@ use serde::Deserialize;
 pub struct GuestToken{
     pub guest_token: String
 }
+
+pub struct CSRFAuth{
+    pub auth_token: String,
+    pub csrf_token: String
+}
