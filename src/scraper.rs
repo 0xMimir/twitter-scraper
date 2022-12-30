@@ -2,7 +2,7 @@ use std::cell::RefCell;
 
 use super::types::auth::GuestToken;
 use crate::{
-    error::ResponseError,
+    error::{ResponseError, Error},
     profile::Profile,
     types::{
         adaptive::AdaptiveParams, auth::CSRFAuth, graph::GraphResponse, params::Params,
@@ -95,15 +95,24 @@ impl TwitterScraper {
                 ),
             None => req,
         };
+        let req = req.send().await?;
+        let code = req.status();
+        let response = req.text().await?;
 
-        let response = req.send().await?.text().await?;
-        // println!("{}", response);
+        if code.as_u16() != 200 {
+            let response_error: ResponseError =
+                serde_json::from_str(&response).map_err(|_| Error::from(code))?;
+
+            return Err(response_error.into());
+        }
 
         match serde_json::from_str(&response) {
             Ok(t) => Ok(t),
             Err(error) => {
+                println!("{}, {}", response, code);
                 let response_error: ResponseError =
                     serde_json::from_str(&response).map_err(|_| error)?;
+
                 Err(response_error.into())
             }
         }
@@ -118,13 +127,18 @@ impl TwitterScraper {
     pub async fn get_users_tweets(
         &self,
         username: &str,
-        _cursor: Option<String>,
+        cursor: Option<String>,
     ) -> Result<(Vec<Tweet>, Option<String>)> {
         let user_id = self.get_profile(username).await?.user_id;
+
+        let params = AdaptiveParams::user_tweets_params(&user_id, cursor);
+
         let url = format!(
-            "https://api.twitter.com/2/timeline/profile/{}.json",
-            user_id
+            "https://api.twitter.com/2/timeline/profile/{}.json?{}",
+            user_id,
+            serde_url_params::to_string(&params)?
         );
+        
         self.get_timeline_response(url)
             .await
             .map(|x| x.parse_tweets())
@@ -183,7 +197,7 @@ impl TwitterScraper {
 
         self.make_request::<_, GraphResponse>(url, Method::GET)
             .await
-            .map(|r| r.get_users())
+            .map(|r| r.get_users())?
     }
 }
 

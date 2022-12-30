@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::profile::Profile;
+use crate::{profile::Profile, Error, Result};
 
 use super::profile::TwitterUser;
 
@@ -21,7 +21,8 @@ struct GraphResponseUser {
 
 #[derive(Deserialize, Debug)]
 struct GraphResponseResult {
-    timeline: GraphResponseTimelineOuter,
+    __typename: String,
+    timeline: Option<GraphResponseTimelineOuter>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -89,14 +90,17 @@ struct UserResults {
 }
 
 impl GraphResponse {
-    pub fn get_users(self) -> (Vec<Profile>, Option<String>) {
+    pub fn get_users(self) -> Result<(Vec<Profile>, Option<String>)> {
         let mut profiles = vec![];
         let mut next_cursor = None;
 
-        self.data
+        match self.data
             .user
             .result
-            .timeline
+            .timeline{
+                Some(t) => t,
+                None => return Err(Error::from(self.data.user.result))
+            }
             .timeline
             .instructions
             .into_iter()
@@ -120,6 +124,15 @@ impl GraphResponse {
                 }
             });
 
-        (profiles, next_cursor)
+        Ok((profiles, next_cursor))
+    }
+}
+
+impl From<GraphResponseResult> for Error{
+    fn from(value: GraphResponseResult) -> Self {
+        match value.__typename.as_str(){
+            "UserUnavailable" => Self::UnauthorizedToViewSpecificUser,
+            _ => Self::UnknownError
+        }
     }
 }
