@@ -4,10 +4,11 @@ use serde::Deserialize;
 
 pub type Result<T> = core::result::Result<T, Error>;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum Error {
-    ReqwestError(String),
-    SerdeError(String),
+    ReqwestError(reqwest::Error),
+    SerdeJsonError(serde_json::Error),
+    SerdeParamsError(serde_url_params::Error),
     ParseError(ParseError),
     UserSuspended,
     UserNotFound,
@@ -33,17 +34,18 @@ impl From<reqwest::Error> for Error {
     fn from(error: reqwest::Error) -> Self {
         if let Some(status) = error.status() {
             let error_from_status = Self::from(status);
-            if error_from_status != Self::UnknownError {
-                return error_from_status;
+            match error_from_status{
+                Self::UnknownError => (),
+                _ => return error_from_status
             }
         }
-        Self::ReqwestError(error.to_string())
+        Self::ReqwestError(error)
     }
 }
 
 impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Self {
-        Self::SerdeError(error.to_string())
+        Self::SerdeJsonError(error)
     }
 }
 
@@ -55,7 +57,7 @@ impl From<ParseError> for Error {
 
 impl From<serde_url_params::Error> for Error {
     fn from(value: serde_url_params::Error) -> Self {
-        Self::SerdeError(value.to_string())
+        Self::SerdeParamsError(value)
     }
 }
 

@@ -61,7 +61,11 @@ async fn test_profile_not_found() {
     let scraper = TwitterScraper::new();
     scraper.get_guest_token().await.unwrap();
     let profile = scraper.get_profile("ADLP40329lfdslfkdDJKSAHDkJ").await;
-    assert_eq!(profile, Err(Error::UserNotFound));
+    let error = profile.unwrap_err();
+    match error{
+        Error::UserNotFound => (),
+        _ => assert!(false)
+    }
 }
 #[tokio::test]
 async fn test_profile_error_suspended() {
@@ -69,7 +73,12 @@ async fn test_profile_error_suspended() {
     let scraper = TwitterScraper::new();
     scraper.get_guest_token().await.unwrap();
     let profile = scraper.get_profile("123").await;
-    assert_eq!(profile, Err(Error::UserSuspended));
+    assert_eq!(profile.is_err(), true);
+    let error = profile.unwrap_err();
+    match error{
+        Error::UserSuspended => (),
+        _ => assert!(false)
+    }
 }
 #[tokio::test]
 async fn test_profile_valid() {

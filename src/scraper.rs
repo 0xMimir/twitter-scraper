@@ -48,6 +48,7 @@ impl TwitterScraper {
             .make_request(
                 "https://api.twitter.com/1.1/guest/activate.json",
                 Method::POST,
+                &None
             )
             .await?;
 
@@ -64,7 +65,7 @@ impl TwitterScraper {
             .build()
             .unwrap()
     }
-    async fn make_request<S, T>(&self, url: S, method: Method) -> Result<T>
+    async fn make_request<S, T>(&self, url: S, method: Method, csrf: &Option<CSRFAuth>) -> Result<T>
     where
         S: reqwest::IntoUrl,
         T: DeserializeOwned + 'static,
@@ -79,7 +80,7 @@ impl TwitterScraper {
             None => req,
         };
 
-        let req = match &self.csrf_auth {
+        let req = match &csrf {
             Some(token) => req
                 .header(
                     "cookie",
@@ -121,7 +122,7 @@ impl TwitterScraper {
     where
         S: reqwest::IntoUrl,
     {
-        self.make_request(url, Method::GET).await
+        self.make_request(url, Method::GET, &None).await
     }
 
     pub async fn get_users_tweets(
@@ -161,7 +162,7 @@ impl TwitterScraper {
 
     pub async fn get_profile(&self, username: &str) -> Result<Profile> {
         let url = format!("https://api.twitter.com/graphql/4S2ihIKfF3xhp-ENxvUAfQ/UserByScreenName?variables=%7B%22screen_name%22%3A%22{}%22%2C%22withHighlightedLabel%22%3Atrue%7D", username);
-        let response: TwitterUserResponse = self.make_request(url, Method::GET).await?;
+        let response: TwitterUserResponse = self.make_request(url, Method::GET, &None).await?;
         response.data.user.try_into()
     }
 
@@ -195,7 +196,7 @@ impl TwitterScraper {
         };
         let url = format!("{}?{}", url, params);
 
-        self.make_request::<_, GraphResponse>(url, Method::GET)
+        self.make_request::<_, GraphResponse>(url, Method::GET, &self.csrf_auth)
             .await
             .map(|r| r.get_users())?
     }
