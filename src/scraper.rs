@@ -3,10 +3,9 @@ use std::cell::RefCell;
 use super::types::auth::GuestToken;
 use crate::{
     error::{ResponseError, Error},
-    profile::Profile,
     types::{
         adaptive::AdaptiveParams, auth::CSRFAuth, graph::GraphResponse, params::Params,
-        profile::TwitterUserResponse, timeline::TwitterTimelineResponse, tweet::Tweet,
+        profile::{TwitterUserResponse, Profile}, timeline::TwitterTimelineResponse, tweet::Tweet,
     },
     Result,
 };
@@ -163,7 +162,7 @@ impl TwitterScraper {
     pub async fn get_profile(&self, username: &str) -> Result<Profile> {
         let url = format!("https://api.twitter.com/graphql/4S2ihIKfF3xhp-ENxvUAfQ/UserByScreenName?variables=%7B%22screen_name%22%3A%22{}%22%2C%22withHighlightedLabel%22%3Atrue%7D", username);
         let response: TwitterUserResponse = self.make_request(url, Method::GET, &None).await?;
-        response.data.user.try_into()
+        response.try_into()
     }
 
     pub async fn get_followers(

@@ -3,7 +3,7 @@ use chrono::NaiveDateTime;
 #[derive(Debug)]
 pub struct Tweet {
     pub hashtags: Vec<String>,
-    pub id: String,
+    pub id: i64,
     pub in_reply_to_status: Option<String>,
     pub is_quoted: bool,
     pub is_reply: bool,
@@ -17,7 +17,8 @@ pub struct Tweet {
     pub source: String,
     pub timestamp: i64,
     pub urls: Vec<String>,
-    pub user_id: String,
+    pub user_id: i64,
     pub username: String,
     pub sensitive_content: bool,
+    pub mentions: Vec<String>
 }

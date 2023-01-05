@@ -6,79 +6,79 @@ use std::collections::HashMap;
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TwitterTimelineResponse {
-    pub global_objects: GlobalObjects,
-    pub timeline: Timeline,
+    global_objects: GlobalObjects,
+    timeline: Timeline,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct GlobalObjects {
-    pub tweets: HashMap<String, TweetRaw>,
-    pub users: HashMap<String, User>,
+struct GlobalObjects {
+    tweets: HashMap<String, TweetRaw>,
+    users: HashMap<String, User>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct User {
-    pub id: i64,
-    pub id_str: String,
-    pub name: String,
+struct User {
+    // pub id: i64,
+    // pub id_str: String,
+    // pub name: String,
     pub screen_name: String,
-    pub description: String,
-    pub url: Option<String>,
-    pub entities: Entities,
-    pub protected: bool,
-    pub followers_count: i64,
-    pub friends_count: i64,
-    pub listed_count: i64,
-    pub created_at: String,
-    pub favourites_count: i64,
-    pub verified: bool,
-    pub media_count: i64,
-    pub lang: Option<String>,
-    pub contributors_enabled: bool,
-    pub is_translator: bool,
-    pub is_translation_enabled: bool,
-    pub has_extended_profile: bool,
-    pub default_profile: bool,
-    pub default_profile_image: bool,
-    pub has_custom_timelines: bool,
-    pub business_profile_state: String,
-    pub translator_type: String,
-    pub require_some_consent: bool,
+    // pub description: String,
+    // pub url: Option<String>,
+    // pub entities: Entities,
+    // pub protected: bool,
+    // pub followers_count: i64,
+    // pub friends_count: i64,
+    // pub listed_count: i64,
+    // pub created_at: String,
+    // pub favourites_count: i64,
+    // pub verified: bool,
+    // pub media_count: i64,
+    // pub lang: Option<String>,
+    // pub contributors_enabled: bool,
+    // pub is_translator: bool,
+    // pub is_translation_enabled: bool,
+    // pub has_extended_profile: bool,
+    // pub default_profile: bool,
+    // pub default_profile_image: bool,
+    // pub has_custom_timelines: bool,
+    // pub business_profile_state: String,
+    // pub translator_type: String,
+    // pub require_some_consent: bool,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct TweetRaw {
+struct TweetRaw {
     pub created_at: String,
     pub id: i64,
     pub id_str: String,
     pub text: String,
-    pub truncated: bool,
+    // pub truncated: bool,
     pub entities: Entities,
     pub source: String,
-    pub in_reply_to_status_id: Option<i64>,
+    // pub in_reply_to_status_id: Option<i64>,
     pub in_reply_to_status_id_str: Option<String>,
-    pub in_reply_to_user_id: Option<i64>,
-    pub in_reply_to_user_id_str: Option<String>,
+    // pub in_reply_to_user_id: Option<i64>,
+    // pub in_reply_to_user_id_str: Option<String>,
     pub in_reply_to_screen_name: Option<String>,
     pub user_id: i64,
     pub user_id_str: String,
     pub is_quote_status: bool,
-    pub quoted_status_id: Option<i64>,
-    pub quoted_status_id_str: Option<String>,
+    // pub quoted_status_id: Option<i64>,
+    // pub quoted_status_id_str: Option<String>,
     pub retweet_count: i64,
     pub favorite_count: i64,
-    pub conversation_id: i64,
-    pub conversation_id_str: String,
-    pub favorited: bool,
+    // pub conversation_id: i64,
+    // pub conversation_id_str: String,
+    // pub favorited: bool,
     pub retweeted: bool,
     pub possibly_sensitive: Option<bool>,
-    pub possibly_sensitive_editable: Option<bool>,
-    pub lang: Option<String>,
+    // pub possibly_sensitive_editable: Option<bool>,
+    // pub lang: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Entities {
+struct Entities {
     #[serde(default)]
     pub hashtags: Vec<Text>,
     #[serde(default)]
@@ -90,95 +90,77 @@ pub struct Entities {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Url {
+struct Url {
     pub url: String,
-    pub expanded_url: String,
-    pub display_url: String,
-    pub indices: Indices,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct UserMention {
-    pub id: i64,
-    pub id_str: String,
-    pub indices: Indices,
-    pub name: String,
+struct UserMention {
     pub screen_name: String,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Text {
-    pub indices: Indices,
+struct Text {
     pub text: String,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Indices {
-    pub start: i32,
-    pub end: i32,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Timeline {
-    pub id: String,
+struct Timeline {
     pub instructions: Vec<Instruction>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Instruction {
+struct Instruction {
     pub add_entries: Option<AddEntries>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct AddEntries {
+struct AddEntries {
     pub entries: Vec<Entry>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Entry {
-    pub entry_id: String,
-    pub sort_index: String,
+struct Entry {
     pub content: Content,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Content {
+struct Content {
     pub operation: Option<Operation>,
     pub item: Option<TweetCursorItem>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Operation {
+struct Operation {
     pub cursor: Cursor,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Cursor {
+struct Cursor {
     pub value: String,
     pub cursor_type: String,
-    pub stop_on_empty_response: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TweetCursorItem {
+struct TweetCursorItem {
     pub content: TweetCursorContent,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TweetCursorContent {
+struct TweetCursorContent {
     pub tweet: CursorTweet,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CursorTweet {
+struct CursorTweet {
     pub id: String,
 }
 
@@ -246,8 +228,15 @@ impl TwitterTimelineResponse {
             .map(|s| s.text.to_owned())
             .collect();
 
+        let mentions = raw_tweet_info
+            .entities
+            .user_mentions
+            .iter()
+            .map(|m| m.screen_name.to_owned())
+            .collect();
+
         Some(Tweet {
-            id: raw_tweet_info.id_str.clone(),
+            id: raw_tweet_info.id,
             in_reply_to_status: raw_tweet_info.in_reply_to_status_id_str.clone(),
             is_quoted: raw_tweet_info.is_quote_status,
             is_reply: raw_tweet_info.in_reply_to_screen_name.is_some(),
@@ -260,10 +249,11 @@ impl TwitterTimelineResponse {
             retweets: raw_tweet_info.retweet_count,
             text: raw_tweet_info.text.to_owned(),
             timestamp: time_parsed.timestamp(),
-            user_id: raw_tweet_info.user_id_str.to_owned(),
+            user_id: raw_tweet_info.user_id,
             username: username.to_owned(),
             sensitive_content: raw_tweet_info.possibly_sensitive.unwrap_or(false),
             source: raw_tweet_info.source.to_owned(),
+            mentions,
             time_parsed,
             hashtags,
             symbols,

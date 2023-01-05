@@ -6,5 +6,4 @@ pub mod types;
 pub mod scraper;
 pub use scraper::TwitterScraper;
 
-pub mod profile;
 pub mod search;

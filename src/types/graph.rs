@@ -1,8 +1,8 @@
 use serde::Deserialize;
 
-use crate::{profile::Profile, Error, Result};
+use crate::{Error, Result};
 
-use super::profile::TwitterUser;
+use super::profile::{Profile, TwitterUser};
 
 #[derive(Deserialize, Debug)]
 pub struct GraphResponse {
@@ -94,45 +94,42 @@ impl GraphResponse {
         let mut profiles = vec![];
         let mut next_cursor = None;
 
-        match self.data
-            .user
-            .result
-            .timeline{
-                Some(t) => t,
-                None => return Err(Error::from(self.data.user.result))
-            }
-            .timeline
-            .instructions
-            .into_iter()
-            .for_each(|x| {
-                if let GraphResponseInstructions::Valid(valid) = x {
-                    for entry in valid.entries {
-                        match entry.content {
-                            ContentEnum::Cursor(cursor) => {
-                                if cursor.cursor_type == "Bottom" {
-                                    next_cursor = Some(cursor.value);
-                                }
+        match self.data.user.result.timeline {
+            Some(t) => t,
+            None => return Err(Error::from(self.data.user.result)),
+        }
+        .timeline
+        .instructions
+        .into_iter()
+        .for_each(|x| {
+            if let GraphResponseInstructions::Valid(valid) = x {
+                for entry in valid.entries {
+                    match entry.content {
+                        ContentEnum::Cursor(cursor) => {
+                            if cursor.cursor_type == "Bottom" {
+                                next_cursor = Some(cursor.value);
                             }
-                            ContentEnum::Item(item) => {
-                                match Profile::try_from(item.item_content.user_results.result) {
-                                    Ok(profile) => profiles.push(profile),
-                                    _ => continue,
-                                }
+                        }
+                        ContentEnum::Item(item) => {
+                            match Profile::try_from(item.item_content.user_results.result) {
+                                Ok(profile) => profiles.push(profile),
+                                _ => continue,
                             }
                         }
                     }
                 }
-            });
+            }
+        });
 
         Ok((profiles, next_cursor))
     }
 }
 
-impl From<GraphResponseResult> for Error{
+impl From<GraphResponseResult> for Error {
     fn from(value: GraphResponseResult) -> Self {
-        match value.__typename.as_str(){
+        match value.__typename.as_str() {
             "UserUnavailable" => Self::UnauthorizedToViewSpecificUser,
-            _ => Self::UnknownError
+            _ => Self::UnknownError,
         }
     }
 }
